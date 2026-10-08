@@ -33,9 +33,11 @@ export function UploadPrints({ matchId, resend }: { matchId: string; resend: boo
   const camera = useRef<HTMLInputElement>(null);
 
   const add = (list: FileList | null) => {
-    if (!list) return;
+    if (!list || list.length === 0) return;
+    // copia os arquivos AGORA: o campo é limpo logo depois e a FileList esvazia junto
+    const picked = Array.from(list);
     setError(null);
-    setFiles((cur) => [...cur, ...Array.from(list)].slice(0, 4));
+    setFiles((cur) => [...cur, ...picked].slice(0, 4));
   };
 
   const send = async () => {
