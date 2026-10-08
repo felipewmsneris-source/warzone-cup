@@ -118,7 +118,7 @@ export default async function Page({
           const r = here.find((x) => x.championship_team_id === t.id);
           const status = displayStatus(selected.status as MatchStatus, r?.status);
           const result = r && (results ?? []).find((x) => x.report_id === r.id);
-          const showReport = r && r.status !== "REABERTO" && (r.status !== "RASCUNHO" || r.placement !== null);
+          const showReport = r && r.status !== "REABERTO" && (r.status !== "RASCUNHO" || r.placement !== null || r.flags.includes("LEITURA_MANUAL"));
           const flags = r && r.status !== "VALIDADA" ? r.flags : [];
           return (
             <li key={t.id} className={`panel p-3 ${status === "DIVERGENCIA" ? "border-win/60" : ""}`}>
@@ -130,7 +130,9 @@ export default async function Page({
               {showReport && r && (
                 <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-sm">
                   <span className="text-muted">
-                    {r.placement ? ordinal(r.placement) : "colocação ?"}, {r.total_scoring_baixas ?? "?"} baixas
+                    {r.placement === null && r.flags.includes("LEITURA_MANUAL")
+                      ? "aguardando lançamento"
+                      : <>{r.placement ? ordinal(r.placement) : "colocação ?"}, {r.total_scoring_baixas ?? "?"} baixas</>}
                     {result && <span className="ml-2 font-semibold text-amber">{pts(result.points)} pts</span>}
                     {r.status === "RASCUNHO" && " (capitão ainda não confirmou)"}
                   </span>

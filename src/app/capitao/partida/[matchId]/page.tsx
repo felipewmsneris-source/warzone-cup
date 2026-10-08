@@ -59,7 +59,10 @@ export default async function Page({ params }: { params: Promise<{ matchId: stri
   const allowed = canSubmit(match, report);
   const isDraft = report?.status === "RASCUNHO" && !!report.ai_raw;
   const hasReading = !!report?.ai_raw;
-  const flags = ((report?.flags ?? []) as Flag[]);
+  const flags = ((report?.flags ?? []) as Flag[]).filter((f) => f !== "LEITURA_MANUAL");
+  const manual = !!(report?.ai_raw as { manual?: boolean } | null)?.manual;
+  // modo manual: até o administrador lançar a colocação, só há prints para mostrar
+  const awaitingAdmin = manual && report?.placement == null;
   const unreadable = "Não foi possível identificar com segurança.";
 
   return (
@@ -85,9 +88,44 @@ export default async function Page({ params }: { params: Promise<{ matchId: stri
         </p>
       )}
 
-      {hasReading && report && (
+      {hasReading && report && awaitingAdmin && (
         <section className="panel mt-5 p-4">
-          <h2 className="text-2xl">{isDraft ? "Resultado identificado" : "Resultado enviado"}</h2>
+          <h2 className="text-2xl">{isDraft ? "Prints recebidas" : "Prints enviadas"}</h2>
+          <p className="mt-2 text-sm text-muted">
+            {isDraft
+              ? "Confira se estão aqui a tela de resultado e o placar do esquadrão. Depois de enviar, o administrador lança a colocação e as baixas."
+              : "O administrador vai conferir as prints e lançar a colocação e as baixas. A pontuação aparece aqui depois disso."}
+          </p>
+          {flags.length > 0 && (
+            <ul className="mt-3 list-disc pl-5 text-sm text-amber">
+              {flags.map((f) => <li key={f}>{FLAG_LABEL[f] ?? f}</li>)}
+            </ul>
+          )}
+          {signed.length > 0 && (
+            <div className="mt-4 grid grid-cols-2 gap-2">
+              {signed.map((img) =>
+                img.url ? (
+                  <a key={img.id} href={img.url} target="_blank" rel="noreferrer" className="block overflow-hidden rounded border border-line">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={img.url} alt="Print enviada" className="aspect-video w-full object-cover" />
+                  </a>
+                ) : null,
+              )}
+            </div>
+          )}
+          {signed.length === 1 && isDraft && (
+            <p className="mt-3 text-sm text-amber">Só uma print foi enviada. Se puder, envie as duas.</p>
+          )}
+          {report.admin_note && report.status !== "REJEITADA" && (
+            <p className="mt-3 text-sm text-muted">Observação do administrador: {report.admin_note}</p>
+          )}
+          {isDraft && allowed.ok && <ConfirmButtons matchId={matchId} needsReview manual />}
+        </section>
+      )}
+
+      {hasReading && report && !awaitingAdmin && (
+        <section className="panel mt-5 p-4">
+          <h2 className="text-2xl">{manual ? "Resultado lançado" : isDraft ? "Resultado identificado" : "Resultado enviado"}</h2>
           <dl className="mt-4 space-y-4">
             <div>
               <dt className="text-sm text-muted">Colocação</dt>

@@ -41,7 +41,9 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
   const current = signed.filter((i) => i.is_current);
   const older = signed.filter((i) => !i.is_current);
 
-  const raw = (report.ai_raw ?? {}) as { readings?: ImageReading[]; duplicateNotes?: string[]; aiError?: string | null; model?: string };
+  const raw = (report.ai_raw ?? {}) as { manual?: boolean; readings?: ImageReading[]; duplicateNotes?: string[]; aiError?: string | null; model?: string | null };
+  const manual = !!raw.manual;
+  const firstEntry = report.placement === null;
   const stats = raw.readings?.find((r) => r.type === "STATS");
   const flags = (report.flags ?? []) as Flag[];
   const status = report.status as ReportStatus;
@@ -122,6 +124,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
         </section>
 
         <div className="space-y-5">
+          {!manual && (
           <section className="panel p-4">
             <h2 className="text-2xl">Leitura da IA</h2>
             {raw.aiError && <p className="mt-2 text-sm text-win">A leitura falhou: {raw.aiError}</p>}
@@ -172,10 +175,23 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
               <p key={r.index} className="mt-1 text-xs text-muted">Imagem {r.index + 1}: {r.notes}</p>
             ))}
           </section>
+          )}
 
-          <section className="panel p-4">
-            <h2 className="text-2xl">Corrigir resultado</h2>
-            <p className="mt-1 text-sm text-muted">Use a coluna Baixas da print. A coluna Eliminações não conta.</p>
+          <section className={`panel p-4 ${firstEntry ? "border-amber/60" : ""}`}>
+            <h2 className="text-2xl">{firstEntry ? "Lançar resultado" : "Corrigir resultado"}</h2>
+            <p className="mt-1 text-sm text-muted">
+              Olhe as prints ao lado. Na tela de resultado, veja a colocação (VITÓRIA = 1). No placar do esquadrão,
+              use só a coluna <strong className="text-ink">Baixas</strong>; a coluna Eliminações não conta.
+            </p>
+            {score && (
+              <p className="mt-2 text-sm">
+                {result ? "Pontos oficiais" : "Pontos se validado"}:{" "}
+                <span className="font-display text-xl font-bold text-amber">{pts(score.points)}</span>
+                <span className="ml-1 text-xs text-muted">
+                  ({report.total_scoring_baixas} × {pts(score.multiplier)}{Number(score.bonus) > 0 && ` + ${pts(score.bonus)}`})
+                </span>
+              </p>
+            )}
             <ActionForm action={correctReport} className="mt-3 space-y-3">
               <input type="hidden" name="report_id" value={id} />
               <div>
@@ -193,10 +209,19 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
                 );
               })}
               <div>
-                <label className="label" htmlFor="reason-c">Motivo da correção</label>
-                <input id="reason-c" name="reason" className="field" placeholder="Correção após conferência da screenshot" required />
+                <label className="label" htmlFor="reason-c">{firstEntry ? "Observação (opcional)" : "Motivo da correção"}</label>
+                <input
+                  id="reason-c" name="reason" className="field" required={!firstEntry}
+                  placeholder={firstEntry ? "Lançamento manual a partir das prints" : "Correção após conferência da screenshot"}
+                />
               </div>
-              <Submit className="btn btn-ghost">Salvar correção</Submit>
+              {status !== "VALIDADA" && (
+                <label className="flex items-center gap-2 text-sm">
+                  <input type="checkbox" name="validate" defaultChecked className="size-4" />
+                  Validar ao salvar (o resultado entra na classificação)
+                </label>
+              )}
+              <Submit className={firstEntry ? "btn w-full" : "btn btn-ghost"}>{firstEntry ? "Lançar resultado" : "Salvar correção"}</Submit>
             </ActionForm>
           </section>
 

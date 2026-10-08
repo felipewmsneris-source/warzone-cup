@@ -8,7 +8,7 @@ import { canSubmit, ACTIVE } from "@/lib/rules";
 import { evaluateReadings, nameFlags, statusOnConfirm } from "@/lib/evaluate";
 import { matchRoster, type RosterPlayer } from "@/lib/names";
 import { dhash, hamming, sha256, PHASH_MAX_DISTANCE } from "@/lib/imagehash";
-import { readScreenshots, type VisionImage } from "@/lib/vision";
+import { aiEnabled, readScreenshots, type VisionImage } from "@/lib/vision";
 import { notify } from "@/lib/log";
 import type { Flag, ImageReading } from "@/lib/types";
 
@@ -161,15 +161,20 @@ export async function analyzeReport(matchId: string, paths: string[]): Promise<R
   // ---------- leitura pela IA ----------
   let readings: ImageReading[] = [];
   let aiError: string | null = null;
-  try {
-    readings = await readScreenshots(files.map((f) => ({ data: f.buf, mediaType: f.mediaType })));
-  } catch (e) {
-    aiError = e instanceof Error ? e.message : "erro desconhecido";
-    flags.add("FALHA_NA_IA");
+  const manual = !aiEnabled();
+  if (manual) {
+    flags.add("LEITURA_MANUAL");
+  } else {
+    try {
+      readings = await readScreenshots(files.map((f) => ({ data: f.buf, mediaType: f.mediaType })));
+    } catch (e) {
+      aiError = e instanceof Error ? e.message : "erro desconhecido";
+      flags.add("FALHA_NA_IA");
+    }
   }
 
   const ev = evaluateReadings(readings);
-  ev.flags.forEach((f) => flags.add(f));
+  if (!manual) ev.flags.forEach((f) => flags.add(f));
 
   // ---------- nomes x elenco ----------
   const { data: rosterRows } = await db
@@ -211,7 +216,7 @@ export async function analyzeReport(matchId: string, paths: string[]): Promise<R
       squad_total_baixas_detected: ev.squadTotalDetected,
       totals_match: ev.totalsMatch,
       ai_confidence: readings.length ? Number(ev.confidence.toFixed(3)) : null,
-      ai_raw: { readings, duplicateNotes, aiError, model: process.env.ANTHROPIC_MODEL || "claude-opus-5-5" },
+      ai_raw: { manual, readings, duplicateNotes, aiError, model: manual ? null : process.env.ANTHROPIC_MODEL || "claude-opus-5-5" },
       flags: [...flags],
       captain_note: null,
       updated_at: new Date().toISOString(),

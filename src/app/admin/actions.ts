@@ -475,12 +475,14 @@ export async function reopenReport(_: FormState, fd: FormData): Promise<FormStat
 export async function correctReport(_: FormState, fd: FormData): Promise<FormState> {
   const user = await requireAdmin();
   const id = s(fd, "report_id");
-  const reason = s(fd, "reason");
-  if (!reason) return { error: "Informe o motivo da correção." };
   const db = adminDb();
   const ctx = await loadReport(db, id);
   if (!ctx) return { error: "Report não encontrado." };
   const { report, match } = ctx;
+  const firstEntry = report.placement === null;
+  const reason = s(fd, "reason") || (firstEntry ? "Lançamento manual a partir das prints" : "");
+  if (!reason) return { error: "Informe o motivo da correção." };
+  const validateNow = fd.get("validate") === "on";
 
   const placement = Number(s(fd, "placement"));
   if (!Number.isInteger(placement) || placement < 1 || placement > 16) return { error: "Colocação deve ser de 1 a 16." };
@@ -499,7 +501,7 @@ export async function correctReport(_: FormState, fd: FormData): Promise<FormSta
     const row = (current ?? []).find((c) => c.player_id === r.player_id);
     if (!row || row.scoring_baixas !== value) {
       entries.push({
-        action: "Corrigiu report", entity: "reports", entityId: id, championshipId: match.championship_id,
+        action: firstEntry ? "Lançou resultado" : "Corrigiu report", entity: "reports", entityId: id, championshipId: match.championship_id,
         field: `Baixas de ${nick}`, oldValue: row?.scoring_baixas ?? "–", newValue: value, reason,
       });
     }
@@ -508,7 +510,7 @@ export async function correctReport(_: FormState, fd: FormData): Promise<FormSta
   if (rows.length !== 3) return { error: "O time precisa ter 3 jogadores cadastrados." };
   if (report.placement !== placement) {
     entries.push({
-      action: "Corrigiu report", entity: "reports", entityId: id, championshipId: match.championship_id,
+      action: firstEntry ? "Lançou resultado" : "Corrigiu report", entity: "reports", entityId: id, championshipId: match.championship_id,
       field: "Colocação", oldValue: report.placement ?? "–", newValue: placement, reason,
     });
   }
@@ -528,7 +530,7 @@ export async function correctReport(_: FormState, fd: FormData): Promise<FormSta
     "SEM_PRINT_COLOCACAO", "COLOCACAO_ILEGIVEL", "COLOCACAO_FORA_DA_FAIXA", "SEM_PRINT_PLACAR",
     "COLUNA_BAIXAS_NAO_LOCALIZADA", "JOGADORES_INCOMPLETOS", "BAIXAS_ILEGIVEIS", "TOTAL_ESQUADRAO_ILEGIVEL",
     "SOMA_DIFERENTE_DO_TOTAL", "NOME_NAO_RECONHECIDO", "NOME_BAIXA_CONFIANCA", "LEITURA_BAIXA_CONFIANCA",
-    "VITORIA_INCONSISTENTE", "FALHA_NA_IA",
+    "VITORIA_INCONSISTENTE", "FALHA_NA_IA", "LEITURA_MANUAL",
   ];
   const wasValidated = report.status === "VALIDADA";
   await db.from("reports").update({
@@ -550,7 +552,20 @@ export async function correctReport(_: FormState, fd: FormData): Promise<FormSta
     }
     return done("Correção salva e pontuação recalculada.");
   }
-  return done("Correção salva. Valide o report para ele entrar na classificação.");
+  if (validateNow) {
+    const err = await validate(db, user, id);
+    if (err) {
+      revalidatePath("/", "layout");
+      return { error: `Valores salvos, mas o report não foi validado. ${err}` };
+    }
+    await audit(user, {
+      action: "Validou report", entity: "reports", entityId: id, championshipId: match.championship_id,
+      field: "status", oldValue: report.status, newValue: "VALIDADA",
+    });
+    await notify([ctx.ct.captain_user_id], `Partida ${match.match_number}: seu report foi validado.`, undefined, `/capitao/partida/${match.id}`);
+    return done("Resultado salvo e validado. Classificação atualizada.");
+  }
+  return done("Valores salvos. Valide o report para ele entrar na classificação.");
 }
 
 export async function saveAdminNote(_: FormState, fd: FormData): Promise<FormState> {

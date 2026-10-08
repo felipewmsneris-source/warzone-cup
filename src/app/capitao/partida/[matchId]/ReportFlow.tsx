@@ -128,7 +128,7 @@ export function UploadPrints({ matchId, resend }: { matchId: string; resend: boo
   );
 }
 
-export function ConfirmButtons({ matchId, needsReview }: { matchId: string; needsReview: boolean }) {
+export function ConfirmButtons({ matchId, needsReview, manual = false }: { matchId: string; needsReview: boolean; manual?: boolean }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [disputing, setDisputing] = useState(false);
@@ -161,13 +161,15 @@ export function ConfirmButtons({ matchId, needsReview }: { matchId: string; need
           </div>
         </>
       ) : (
-        <div className="grid gap-2 sm:grid-cols-2">
+        <div className={`grid gap-2 ${manual ? "" : "sm:grid-cols-2"}`}>
           <button className="btn" disabled={busy} onClick={() => submit(false)}>
-            {busy ? "Enviando…" : needsReview ? "Enviar para conferência" : "Confirmar report"}
+            {busy ? "Enviando…" : manual ? "Enviar para o administrador" : needsReview ? "Enviar para conferência" : "Confirmar report"}
           </button>
-          <button className="btn btn-ghost" disabled={busy} onClick={() => setDisputing(true)}>
-            Informar divergência
-          </button>
+          {!manual && (
+            <button className="btn btn-ghost" disabled={busy} onClick={() => setDisputing(true)}>
+              Informar divergência
+            </button>
+          )}
         </div>
       )}
       {error && <p role="alert" className="mt-3 text-sm text-win">{error}</p>}

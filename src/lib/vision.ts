@@ -60,6 +60,12 @@ const TOOL: Anthropic.Tool = {
   },
 };
 
+/**
+ * Leitura automática ligada só com chave da Anthropic e sem LEITURA_IA=desligada.
+ * Desligada, as prints vão direto para o administrador lançar o resultado.
+ */
+export const aiEnabled = () => !!process.env.ANTHROPIC_API_KEY && process.env.LEITURA_IA !== "desligada";
+
 export type VisionImage = { data: Buffer; mediaType: "image/jpeg" | "image/png" | "image/webp" };
 
 /** Lê as prints com o Claude. Lança erro se a API falhar: quem chama trata como EM ANÁLISE. */

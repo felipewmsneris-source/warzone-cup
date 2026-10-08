@@ -57,6 +57,7 @@ export const FLAG_LABEL: Record<Flag, string> = {
   COLOCACAO_REPETIDA: "Outro time já informou essa colocação nesta partida",
   VITORIA_REPETIDA: "Outro time já informou vitória nesta partida",
   POSSIVEL_PRINT_DUPLICADA: "Possível print duplicada",
+  LEITURA_MANUAL: "Resultado a lançar pelo administrador",
   DIVERGENCIA_INFORMADA_PELO_CAPITAO: "O capitão discordou da leitura",
   FALHA_NA_IA: "A leitura automática falhou",
 };
