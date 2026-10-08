@@ -64,7 +64,7 @@ export type VisionImage = { data: Buffer; mediaType: "image/jpeg" | "image/png" 
 
 /** Lê as prints com o Claude. Lança erro se a API falhar: quem chama trata como EM ANÁLISE. */
 export async function readScreenshots(images: VisionImage[]): Promise<ImageReading[]> {
-  const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY, maxRetries: 2, timeout: 50_000 });
+  const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY, maxRetries: 0, timeout: 22_000 });
   const content: Anthropic.ContentBlockParam[] = [];
   images.forEach((img, i) => {
     content.push({ type: "text", text: `Imagem ${i}:` });
