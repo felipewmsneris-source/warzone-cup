@@ -1,0 +1,114 @@
+@import "tailwindcss";
+
+@theme {
+  --color-base: #0d141b;
+  --color-panel: #151f29;
+  --color-raised: #1d2a36;
+  --color-line: #2b3b4a;
+  --color-ink: #e9eef2;
+  --color-muted: #8fa1af;
+  --color-amber: #ffb21e;
+  --color-win: #ff5a3c;
+  --color-ok: #3bd69a;
+  --color-info: #62b4ff;
+  --color-gold: #f5c24b;
+  --color-silver: #c5d0d8;
+  --color-bronze: #d18b52;
+  --font-display: "Saira Condensed", "Arial Narrow", sans-serif;
+  --font-sans: "Saira", system-ui, sans-serif;
+}
+
+html {
+  color-scheme: dark;
+}
+body {
+  background: var(--color-base);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-feature-settings: "tnum";
+  -webkit-font-smoothing: antialiased;
+}
+h1, h2, h3 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  line-height: 1.05;
+}
+:focus-visible {
+  outline: 2px solid var(--color-amber);
+  outline-offset: 2px;
+}
+
+@layer components {
+  .panel {
+    background: var(--color-panel);
+    border: 1px solid var(--color-line);
+    border-radius: 6px;
+  }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: 2.75rem;
+    padding: 0 1.1rem;
+    border-radius: 4px;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 1.1rem;
+    letter-spacing: 0.02em;
+    background: var(--color-amber);
+    color: #14100a;
+    cursor: pointer;
+    transition: filter 0.12s;
+  }
+  .btn:hover { filter: brightness(1.08); }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-ghost {
+    background: transparent;
+    color: var(--color-ink);
+    border: 1px solid var(--color-line);
+  }
+  .btn-ghost:hover { background: var(--color-raised); filter: none; }
+  .btn-danger { background: var(--color-win); color: #1a0703; }
+  .btn-ok { background: var(--color-ok); color: #04170f; }
+  .btn-sm { min-height: 2.25rem; padding: 0 0.8rem; font-size: 1rem; }
+  .field {
+    width: 100%;
+    min-height: 2.75rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: 4px;
+    background: var(--color-base);
+    border: 1px solid var(--color-line);
+    color: var(--color-ink);
+    font-size: 1rem;
+  }
+  .field:focus { border-color: var(--color-amber); outline: none; }
+  .label {
+    display: block;
+    margin-bottom: 0.3rem;
+    font-size: 0.85rem;
+    color: var(--color-muted);
+  }
+  /* placa inclinada da posição: a assinatura visual do placar */
+  .plate {
+    display: inline-grid;
+    place-items: center;
+    min-width: 2.6rem;
+    height: 2.1rem;
+    padding: 0 0.5rem;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 1.35rem;
+    background: var(--color-raised);
+    color: var(--color-ink);
+    clip-path: polygon(18% 0, 100% 0, 82% 100%, 0 100%);
+  }
+  .plate-1 { background: var(--color-gold); color: #1c1503; }
+  .plate-2 { background: var(--color-silver); color: #12181d; }
+  .plate-3 { background: var(--color-bronze); color: #1d0f04; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; }
+}
